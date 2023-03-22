@@ -1,0 +1,42 @@
+
+figure.figsize: 9,7
+figure.dpi : 100
+
+lines.linewidth : 2
+axes.linewidth: 2
+font.family : serif
+# font.serif: Palatino
+font.size : 28
+axes.labelsize : 28
+xtick.direction : in 
+ytick.direction : in
+xtick.top : False
+ytick.right : False
+
+xtick.major.size:    10    # major tick size in points
+xtick.minor.size:    7       # minor tick size in points
+xtick.major.width:   2     # major tick width in points
+xtick.minor.width:   1     # minor tick width in points
+
+ytick.major.size:    10     # major tick size in points
+ytick.minor.size:    7       # minor tick size in points
+ytick.major.width:   2     # major tick width in points
+ytick.minor.width:   1     # minor tick width in points
+
+xtick.major.pad : 5
+xtick.minor.pad : 5
+ytick.major.pad : 5
+ytick.minor.pad : 5
+
+xtick.labelsize : 20
+ytick.labelsize : 20
+legend.fontsize : 17
+legend.frameon : False
+text.usetex : False
+
+savefig.bbox : tight
+savefig.dpi : 100
+
+axes.prop_cycle: cycler('color', ["black", "332288","88CCEE","44AA99","117733","999933","DDCC77","CC6677","882255","AA4499","brown","fd3c06","gray"])
+#axes.prop_cycle: cycler('color', ['000000','e6194b', '3cb44b', 'ffe119', '4363d8', 'f58231', '911eb4', '46f0f0', 'f032e6', 'bcf60c', 'fabebe', '008080', 'e6beff', '9a6324', 'fffac8', '800000', 'aaffc3', '808000', 'ffd8b1', '000075', '808080', 'ffffff'])
+
