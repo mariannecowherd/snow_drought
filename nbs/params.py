@@ -1,7 +1,7 @@
 ## define global parameters ##
 
 homedir = '/global/u1/c/cowherd/e3sm_eval/snow_drought/'
-savepath = '/global/cfs/cdirs/e3sm/cowherd/data/test/'
+savepath = '/global/cfs/cdirs/e3sm/cowherd/data/april25/'
 
 ## names of all models to query
 allnames = ['ACCESS-CM2', 
@@ -27,4 +27,9 @@ table_ids = {'tas':'Amon',
 labels =  {'snw':'SWE [kg m$^{-2}$]', 
              'pr': 'Precip [kg $d^{-1}$]',
              'tas':' Temp [K]'}
+
+
+colors = {'historical':'black',
+          'ssp245':'darkblue',
+          'ssp585':'darkred'}
 
