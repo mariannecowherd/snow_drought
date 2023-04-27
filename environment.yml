@@ -331,6 +331,7 @@ dependencies:
   - xcb-util-wm=0.4.1
   - xerces-c=3.2.3
   - xesmf=0.6.3
+  - xmip
   - xorg-fixesproto=5.0
   - xorg-inputproto=2.3.2
   - xorg-kbproto=1.0.7
