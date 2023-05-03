@@ -91,7 +91,7 @@ def process_variable(var, experiment):
         if model in allnames:
             try:
                 # select where data should be saved
-                filename = f'{var}_{model}_{starty}01-{endy}12_{experiment}.nc'
+                filename = f'{var}_{model}_{experiment}.nc'
                 nc_out = savepath + filename
                 files = glob.glob(nc_out)
 
@@ -277,13 +277,62 @@ def droughtindx(nsample):
         indx.append(norm.ppf(px))
     return indx
 
+
+def get_swei(ds):
+    swe = ds['snw']
+    ntime = swe.shape[0]
+    nlat = swe.shape[2]
+    nlon = swe.shape[1]
+    nyr = int(ntime / 12)
+    nd = nlat * nlon
+    nm = 12
+
+    # Compute the 3-month cumulative sum for each pixel
+    ds_cumsum = ds.rolling(time=3, min_periods=3).sum()
+    #more than 75% of years have swe in that range
+    mask = (np.nansum((cumswe > 0), axis=(0)) > 0.75*nyr)
+    ds_cumsum[:,~mask] = np.nan
+    # mask high values
+    ds_cumsum[ds_cumsum>1e19] = np.nan
+
+    years = np.unique(ds.time.dt.year)
+    months = np.unique(ds.time.dt.month)
+
+    # Reshape the data back into a 4D array of (year, month, lat, lon)
+    ds_new = xr.DataArray(
+        ds_cumsum.snw.data.reshape((-1, 12, ds.sizes['lat'], ds.sizes['lon'])),
+        dims=('year', 'month', 'lat', 'lon'),
+        coords={'year': years, 'month': months, 'lat': ds['lat'], 'lon': ds['lon']}
+    )
+
+    
+    categ = np.zeros((nyr, nm, nlon, nlat))
+    nsample = nyr
+    sweix = droughtindx(nsample)  # all values for each pixel.
+    sweix = np.array(sweix)
+
+    aindx = np.argsort(ds_new.data, axis=0)
+
+    # Create a broadcasting version of sweix
+    sweix_broadcasted = sweix[:, np.newaxis, np.newaxis, np.newaxis]
+
+    # Assign sorted sweix values to categ based on sorted indices (array, indices, values, axis)
+    np.put_along_axis(categ, aindx,sweix_broadcasted, axis=0)
+
+    # Create the new xarray Dataset
+    ds_swei = xr.Dataset(
+        {'swei':(('year','month','lat','lon'), categ)},
+        coords={'year': years, 'month': months,'lon': ds['lon'], 'lat': ds['lat'], }
+    )
+    return ds_swei
+
+'''
 def get_swei(swe):
     ntime = swe.shape[0]
     nlat = swe.shape[1]
     nlon = swe.shape[2]
     nm = 12
     nyr = int(ntime/nm)
-    nyr2 = nyr-1
     nd = nlat*nlon
     mon = []
     for j in range(1,13):
@@ -300,23 +349,24 @@ def get_swei(swe):
         swe = swe[9:-3,:,:].reshape((-1,12,nlat,nlon))
     cumswe = np.zeros((swe.shape[0],12,nlat,nlon))
     for im in range(1,13):
-            cumswe[:,im-1,:,:] = np.nansum(swe[:,im-1:im+2,:,:],axis=1)
+        cumswe[:,im-1,:,:] = np.nansum(swe[:,im-1:im+2,:,:],axis=1)
 
     #more than 75% of years have swe in that range
-    mask = (np.nansum((cumswe > 0), axis=(0)) > 0.75*nyr2)
+    mask = (np.nansum((cumswe > 0), axis=(0)) > 0.75*nyr)
     cumswe[:,~mask] = np.nan
     # mask high values
     cumswe[cumswe>1e19] = np.nan
 
-    categ = np.zeros((nyr2,nm,nlat,nlon,))
-    nsample = nyr2
+    categ = np.zeros((nyr,nm,nlat,nlon))
+    nsample = nyr
     sweix = droughtindx(nsample) ## all values for each pixel.
     for i in range(nlat):
-            for j in range(nlon):
-                    for k in range(12):
-                            aindx = np.argsort(cumswe[:,k-1,i,j]) # puts them in order by year
-                            categ[aindx,k,i,j] = (sweix[:]) # then puts in the swei where that goes
-    for yr in range(nyr2):
-            categ[yr,:,:,:][~mask] = np.nan
-            categ[np.isnan(cumswe)] = np.nan
+        for j in range(nlon):
+            for k in range(12):
+                aindx = np.argsort(cumswe[:,k-1,i,j]) # puts them in order by year
+                    categ[aindx,k,i,j] = (sweix[:]) # then puts in the swei where that goes
+    for yr in range(nyr):
+        categ[yr,:,:,:][~mask] = np.nan
+        categ[np.isnan(cumswe)] = np.nan
     return categ
+    '''
