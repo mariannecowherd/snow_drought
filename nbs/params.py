@@ -1,7 +1,7 @@
 ## define global parameters ##
 
-homedir = '/global/u1/c/cowherd/e3sm_eval/snow_drought/'
-savepath = '/global/cfs/cdirs/e3sm/cowherd/data/april25/'
+homedir = '/global/u1/c/cowherd/snow_drought/'
+savepath = '/global/cfs/cdirs/e3sm/cowherd/data/april25/may3/'
 
 ## names of all models to query
 allnames = ['ACCESS-CM2', 
