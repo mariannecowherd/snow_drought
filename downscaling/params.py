@@ -1,14 +1,14 @@
 ## define global parameters ##
 
-homedir = '/global/u1/c/cowherd/snow_drought/'
-savepath = '/global/cfs/cdirs/m4099/cowherd/'
-datadir = '/global/cfs/cdirs/m4099/fate-of-snotel/wrfdata/'
+homedir = '/glade/u/home/mcowherd/snow_drought/'
+savepath = '/glade/campaign/uwyo/wyom0112/berkeley/'
+datadir = '/glade/campaign/uwyo/wyom0112/postprocess/'
 ## names of all models to query
 allnames = [ 'ukesm1-0-ll_bc']
 ## which experiment ids?
 experiment_ids = ['historical', 'ssp370']
 ## which variables? 
-variables = ['snow','t2','prec_c']
+variables = ['snow','t2','prec']
 
 years = {'historical': [1850,2014],
          'ssp370':[2015,2099],

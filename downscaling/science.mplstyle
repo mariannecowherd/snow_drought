@@ -1,25 +1,24 @@
 
-figure.figsize: 9,7
+figure.figsize: 7,7
 figure.dpi : 100
 
 lines.linewidth : 2
-axes.linewidth: 2
+axes.linewidth: 1
 font.family : serif
-# font.serif: Palatino
-font.size : 28
-axes.labelsize : 28
+font.size : 20
+axes.labelsize : 16
 xtick.direction : in 
 ytick.direction : in
-xtick.top : False
-ytick.right : False
+xtick.top : True
+ytick.right : True
 
-xtick.major.size:    10    # major tick size in points
-xtick.minor.size:    7       # minor tick size in points
+xtick.major.size:    5    # major tick size in points
+xtick.minor.size:    3       # minor tick size in points
 xtick.major.width:   2     # major tick width in points
 xtick.minor.width:   1     # minor tick width in points
 
-ytick.major.size:    10     # major tick size in points
-ytick.minor.size:    7       # minor tick size in points
+ytick.major.size:    5     # major tick size in points
+ytick.minor.size:    3       # minor tick size in points
 ytick.major.width:   2     # major tick width in points
 ytick.minor.width:   1     # minor tick width in points
 
@@ -28,9 +27,9 @@ xtick.minor.pad : 5
 ytick.major.pad : 5
 ytick.minor.pad : 5
 
-xtick.labelsize : 20
-ytick.labelsize : 20
-legend.fontsize : 17
+xtick.labelsize : 16
+ytick.labelsize : 16
+legend.fontsize : 14
 legend.frameon : False
 text.usetex : False
 

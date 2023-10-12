@@ -16,7 +16,7 @@ from collections import defaultdict
 from matplotlib import pyplot as plt
 
 from dask.diagnostics import progress
-import noresmfunctions as fct
+# import noresmfunctions as fct
 from scipy.stats import norm
 from tqdm.autonotebook import tqdm
 import xml.etree.ElementTree as ET
@@ -26,6 +26,187 @@ from params import homedir
 from params import experiment_ids, years, table_ids, labels, variables, savepath
 
 figdir = homedir + 'figures/'
+#Functions and otherwise...
+
+from netCDF4 import Dataset
+import pylab as P
+import numpy as np
+from numpy import ma
+from numpy import dtype
+import matplotlib
+import cartopy.crs as crs
+import cartopy.feature as cfeature
+from cartopy.mpl.ticker import LongitudeFormatter, LatitudeFormatter
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+import matplotlib.colors as colors
+import matplotlib.ticker as mticker
+import matplotlib.gridspec as gridspec
+import xarray as xr
+import pandas as pd
+import os
+from scipy.interpolate import griddata
+import wrf
+from wrf import (getvar, to_np, vertcross, smooth2d, CoordPair, GeoBounds,
+                 get_cartopy, latlon_coords, cartopy_xlim, cartopy_ylim)# 
+# import xesmf as xe
+import dask
+import gc
+import datetime
+import time
+import scipy
+import scipy.stats
+
+states = cfeature.NaturalEarthFeature(category='cultural', scale='50m',
+                                      facecolor='none',
+                                      name='admin_1_states_provinces_shp')
+
+
+roll = 122  #days between 1 Sept and 1 Jan
+bad = -999
+dir_out = "/glade//"
+
+#Read meta
+def _metaread(dir_meta,domain):
+ file = "%swrfinput_%s" %(dir_meta,domain)
+ data = xr.open_dataset(file)
+ lat = data.variables["XLAT"]
+ lon = data.variables["XLONG"]
+ z = data.variables["HGT"]
+
+ return (lat,lon,z,file)
+
+#WRF reader function
+def _wrfread(prefix,dir,var,domain,calendar):
+
+ all_files = sorted(os.listdir(dir))
+
+ anal_files = []
+ for ii in all_files:
+  if ii.startswith(var+"."):
+   if domain in ii:
+    if prefix in ii:
+     anal_files.append(dir+str(ii))
+
+ del all_files
+
+ nf  = len(anal_files)
+
+ data = xr.open_mfdataset(anal_files, combine="by_coords")
+ var_read = data.variables[var]
+ day = data.variables["day"].values
+ nt = len(day)
+
+ day1 = str ( int ( day[0] ) )
+ val1 = day1[0:4]
+ val2 = int (day1[4:6])
+ val3 = int (day1[6:8])
+ print (val1,val2,val3)
+ day1_str = "%s-%s-%s" %(val1, "{:0=2d}".format(val2),
+                                        "{:0=2d}".format(val3) )
+
+ day2 = str ( int ( day[nt-1] ) )
+ val1 = day2[0:4]
+ val2 = int (day2[4:6])
+ val3 = int (day2[6:8])
+ print (val1,val2,val3)
+ day2_str = "%s-%s-%s" %(val1, "{:0=2d}".format(val2),
+                                        "{:0=2d}".format(val3) )
+ time_array = xr.cftime_range(start=day1_str, end=day2_str,
+                              freq="1D", calendar=calendar)
+
+
+ var_read = xr.DataArray(var_read)
+ var_read['day'] = time_array    #year doesn't matter here
+
+ return (var_read.rename({'day': 'time'}))
+
+#WRF tier 3 reader function
+def _wrfread_gcm(model,gcm,variant,dir,var,domain,calendar):
+
+ all_files = sorted(os.listdir(dir))
+
+ anal_files = []
+ for ii in all_files:
+  if ii.startswith(var+".") and model in ii and gcm in ii \
+        and variant in ii and domain in ii:
+   if domain in ii:
+     anal_files.append(dir+str(ii))
+
+ del all_files
+
+ nf  = len(anal_files)
+
+ data = xr.open_mfdataset(anal_files, combine="by_coords")
+ var_read = data.variables[var]
+ day = data.variables["day"].values
+ nt = len(day)
+
+ day1 = str ( int ( day[0] ) )
+ val1 = day1[0:4]
+ val2 = int (day1[4:6])
+ val3 = int (day1[6:8])
+ day1_str = "%s-%s-%s" %(val1, "{:0=2d}".format(val2),
+                                        "{:0=2d}".format(val3) )
+
+ day2 = str ( int ( day[nt-1] ) )
+ val1 = day2[0:4]
+ val2 = int (day2[4:6])
+ val3 = int (day2[6:8])
+ day2_str = "%s-%s-%s" %(val1, "{:0=2d}".format(val2),
+                                        "{:0=2d}".format(val3) )
+
+ time_array = xr.cftime_range(start=day1_str, end=day2_str,
+                              freq="1D", calendar=calendar)   
+
+ var_read = xr.DataArray(var_read)
+ var_read['day'] = time_array    #year doesn't matter here
+
+ return (var_read)
+
+def _read_merge(dir,domain,var,gcm,variant,date_start_hist, \
+                date_start_ssp,date_end_hist,date_end_ssp,exp,bc,calendar):
+    
+    dir_x = "%s/%s_%s_historical/postprocess/" %(dir,gcm,variant) + domain + "/"
+    
+    if bc == True:
+        dir_x = "%s/%s_%s_historical_bc/postprocess/" %(dir,gcm,variant) + domain + "/"
+
+    if calendar == '360_day':
+        date_end_hist = date_end_hist.split("-")
+        date_end_hist = "%s-%s-%s" %(date_end_hist[0],
+                                     date_end_hist[1],
+                                     int( int(date_end_hist[2]) + 0.0001 - 1) )
+        
+        date_end_ssp = date_end_ssp.split("-")
+        date_end_ssp = "%s-%s-%s" %(date_end_ssp[0],
+                                     date_end_ssp[1],
+                                     int( int(date_end_ssp[2]) + 0.0001 - 1) )
+        
+    print (calendar,date_end_hist,date_end_ssp)
+    var_wrf = _wrfread_gcm("hist",gcm,variant,dir_x,var,domain,calendar)
+    var_hist = var_wrf.sel(day=slice(date_start_hist,date_end_hist))
+    dir_x = "%s/%s_%s_%s/postprocess/" %(dir,gcm,variant,exp) + domain + "/"
+    
+    print (gcm,variant,bc,exp)
+    
+    if bc == True:
+        dir_x = "%s/%s_%s_%s_bc/postprocess/" %(dir,gcm,variant,exp) + domain + "/"
+
+    var_wrf = _wrfread_gcm(exp,gcm,variant,dir_x,var,domain,calendar)
+    var_ssp = var_wrf.sel(day=slice(date_start_ssp,date_end_ssp) )
+    
+    var_combine = xr.concat([var_hist,var_ssp],dim="day").rename({'day': 'time'})
+    
+    return (var_combine)
+
+def _metaread(dir_meta,domain):
+ file = "%swrfinput_%s" %(dir_meta,domain)
+ data = xr.open_dataset(file)
+ lat = data.variables["XLAT"]
+ lon = data.variables["XLONG"]
+ z = data.variables["HGT"]
+
+ return (lat,lon,z,file)
 
 def normalize(data):
     mean = np.nanmean(data)
